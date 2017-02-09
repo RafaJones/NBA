@@ -19,11 +19,12 @@ players <- lapply(players, function(elem) elem[1]) #the column is c(name, basket
 players <- sapply(players, as.factor) #change it back into a factor 
 nba16$Player <- players #replace the original 
 
-nba16 <- subset(nba16, select = -c(X,X.1))
-#gap columns from Basketball-reference CSV are removed
-
-minminutes <- function(mins) { 
-  subset(nba16, subset = MP > mins, select = Player:VORP)
+# nba16 <- subset(nba16, select = -c(X,X.1))
+#gap columns from Basketball-reference CSV are removed - GAP COLUMNS NOT IN PER GAME STATS  
+ 
+minminutes <- function(mins) {                            #this is for per game, select Player:PS.G
+  subset(nba16, subset = MP > mins, select = Player:PS.G)  #for advanced stats  select = Player:VORP 
+}
 }
  #arbitrary "rank" column is removed as it was only for alphabetical order 
 
