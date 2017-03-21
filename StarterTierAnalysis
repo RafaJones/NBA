@@ -1,0 +1,54 @@
+library(dplyr)
+library(ggplot2)
+
+file <- "032117nba.csv" 
+
+
+data <- read.csv(file, stringsAsFactors = FALSE)
+data[is.na(data)]<- 0  #a few points are NA if the csv accidentally has double commas ,,
+
+#separate players from their /bballreferenceCode 
+players <- data$Player   #take the players names
+players <- as.character(players) #turn them into characters for splitting 
+players <- strsplit(players, "\\\\") #doing as.character makes \ -> \\ which requires "\\\\" to remove 
+players <- lapply(players, function(elem) elem[1]) #the column is c(name, basketball-reference ID) 
+players <- sapply(players, as.factor) #change it back into a factor 
+data$Player <- players #replace the original 
+
+#for players who've been traded, I treated them as separate players for each team 
+#in other words, their TOT row (total) in the team column "Tm" is deleted 
+data <- filter(data, Tm!="TOT")
+
+with(data, median(MP))
+#median minutes played is 18.85,  19 will be used as a "starter quality" proxy 
+with(data,quantile(G)) #75% of players have played at least 20 games, adding this cutoff 
+
+starters<- filter(data, MP>19) #starter quality players, 286 players
+starters<- filter(starters, G >19)
+starters <- select(starters, Player:PS.G) #29 relevant columns, as ranks were just alphabetical order
+
+
+teams <- with(starters, unique(Tm))
+#western conference teams 
+west <- c("OKC" ,"SAC", "SAS" ,"MEM" ,"POR" ,"HOU" ,"DAL", "GSW" 
+       ,"DEN" ,"PHO" ,"NOP", "LAL" ,"LAC" ,"MIN", "UTA")
+east <- setdiff(teams,west) #the non west teams are eastern teams 
+
+conference <- starters$Tm
+
+for(i in 1:length(conference)){ 
+  conference[i] <- if (conference[i] %in% west) "west" else "east"
+}
+starters <- cbind(starters, conference)
+
+#Exploring some data 
+qplot(FGA, PS.G, data = starters, color=conference, geom = c("point","smooth"))
+qplot(AST, PS.G, data = starters, facets=.~Pos, color=conference, geom = c("point","smooth"))
+
+#effective FG% vs PPG by positions and conference  with linear regression 
+
+qplot(eFG., PS.G, data = starters, facets=.~Pos, color=conference,
+      geom = c("point","smooth"),method="lm", se=FALSE)
+#same but with Kyle Korver's efficiency removed lol! 
+qplot(eFG., PS.G, data = starters34, facets=.~Pos, color=conference,
+      geom = c("point","smooth"),method="lm", se=FALSE)
